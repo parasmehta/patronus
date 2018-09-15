@@ -32,5 +32,4 @@
         android:drawableLeft="@drawable/baseline_folder_open_black_18dp"
         android:drawablePadding="2dip" />
 
-
 </RelativeLayout>
