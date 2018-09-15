@@ -8,6 +8,7 @@ import android.content.*;
 import android.media.ExifInterface;
 import android.net.*;
 import android.os.*;
+import android.support.v4.content.FileProvider;
 import android.view.*;
 import android.graphics.*;
 import android.widget.*;
@@ -36,8 +37,12 @@ public class MainActivity extends Activity {
     private final FaceServiceClient faceServiceClient =
             new FaceServiceRestClient(apiEndpoint, subscriptionKey);
 
+    private static final int REQUEST_TAKE_PHOTO = 0;
     private final int PICK_IMAGE = 1;
     private ProgressDialog detectionProgressDialog;
+
+    // The URI of photo taken with camera
+    private Uri mUriPhotoTaken;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,44 +59,77 @@ public class MainActivity extends Activity {
             }
         });
 
+        Button button2 = findViewById(R.id.button_take_a_photo);
+        button2.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                takePhoto(v);
+            }
+        });
+
         detectionProgressDialog = new ProgressDialog(this);
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_IMAGE && resultCode == RESULT_OK &&
-                data != null && data.getData() != null) {
-            Uri uri = data.getData();
-            InputStream in = null;
-            try {
-                in = getContentResolver().openInputStream(uri);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-            try {
-                ExifInterface exif = null;
-                try {
-                    if (in != null)
-                        exif = new ExifInterface(in);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-                        ExifInterface.ORIENTATION_UNDEFINED);
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(
-                        getContentResolver(), uri);
-                // Rotate the image based on the exif image tags
-                bitmap = rotateBitmap(bitmap, orientation);
-                // Scale down image if necessary
-                if (bitmap.getWidth() > RESOLUTION_SCALE_LIMIT || bitmap.getHeight() > RESOLUTION_SCALE_LIMIT) {
-                    bitmap = Bitmap.createScaledBitmap(bitmap, (int) bitmap.getWidth() / 2,
-                            (int) bitmap.getHeight() / 2, true);
-                }
-                ImageView imageView = findViewById(R.id.imageView1);
-                imageView.setImageBitmap(bitmap);
-                detectAndFrame(bitmap);
+        switch (requestCode) {
+            case REQUEST_TAKE_PHOTO:
+            case PICK_IMAGE:
+                if (resultCode == RESULT_OK) {
 
+                    Uri uri;
+
+                    if (data != null && data.getData() != null) {
+                        uri = data.getData();
+                    } else {
+                        uri = mUriPhotoTaken;
+                    }
+                    InputStream in = null;
+                    try {
+                        in = getContentResolver().openInputStream(uri);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        ExifInterface exif = null;
+
+                        try {
+                            if (in != null)
+                                exif = new ExifInterface(in);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                                ExifInterface.ORIENTATION_UNDEFINED);
+                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+                        // Rotate the image based on the exif image tags
+                        bitmap = rotateBitmap(bitmap, orientation);
+                        // Scale down image if necessary
+                        if (bitmap.getWidth() > RESOLUTION_SCALE_LIMIT || bitmap.getHeight() > RESOLUTION_SCALE_LIMIT) {
+                            bitmap = Bitmap.createScaledBitmap(bitmap, (int) bitmap.getWidth() / 2,
+                                    (int) bitmap.getHeight() / 2, true);
+
+                        }
+                    }
+                }
+
+        }
+    }
+
+
+    // When the button of "Take a Photo with Camera" is pressed.
+    public void takePhoto(View view) {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        if(intent.resolveActivity(getPackageManager()) != null) {
+            // Save the photo taken to a temporary file.
+            File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+            try {
+                File file = File.createTempFile("IMG_", ".jpg", storageDir);
+                mUriPhotoTaken = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".provider", file);
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, mUriPhotoTaken);
+                startActivityForResult(intent, REQUEST_TAKE_PHOTO);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -425,5 +463,21 @@ public class MainActivity extends Activity {
             e.printStackTrace();
             return null;
         }
+
+
+    }
+
+    // Save the activity state when it's going to stop.
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable("ImageUri", mUriPhotoTaken);
+    }
+
+    // Recover the saved state when the activity is recreated.
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        mUriPhotoTaken = savedInstanceState.getParcelable("ImageUri");
     }
 }
