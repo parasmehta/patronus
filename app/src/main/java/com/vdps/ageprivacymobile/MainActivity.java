@@ -5,13 +5,13 @@ import java.util.ArrayList;
 
 import android.app.*;
 import android.content.*;
+import android.media.ExifInterface;
 import android.net.*;
 import android.os.*;
 import android.view.*;
 import android.graphics.*;
 import android.widget.*;
 import android.provider.*;
-
 import com.microsoft.projectoxford.face.*;
 import com.microsoft.projectoxford.face.contract.*;
 
@@ -57,17 +57,31 @@ public class MainActivity extends Activity {
         if (requestCode == PICK_IMAGE && resultCode == RESULT_OK &&
                 data != null && data.getData() != null) {
             Uri uri = data.getData();
+            InputStream in = null;
             try {
+                in = getContentResolver().openInputStream(uri);
+            }
+            catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            try {
+                ExifInterface exif = null;
+                try {
+                    if (in != null)
+                    exif = new ExifInterface(in);
+                }
+                catch(IOException e) {
+                    e.printStackTrace();
+                }
+                int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                        ExifInterface.ORIENTATION_UNDEFINED);
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(
                         getContentResolver(), uri);
+                // Rotate the image based on the exif image tags
+                bitmap = rotateBitmap(bitmap, orientation);
                 ImageView imageView = findViewById(R.id.imageView1);
                 imageView.setImageBitmap(bitmap);
-
-                // Comment out for tutorial
                 detectAndFrame(bitmap);
-
-                // Get age
-
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -209,5 +223,55 @@ public class MainActivity extends Activity {
             }
         }
         return bitmap;
+    }
+
+    /**
+     * Rotates the bitmap based on the exif extracted orientation.
+     * @param bitmap The bitmap to rotate
+     * @param orientation The orientation extracted from EXIF tags
+     * @return The rotated bitmap
+     */
+    private static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
+
+        Matrix matrix = new Matrix();
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_NORMAL:
+                return bitmap;
+            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                matrix.setScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                matrix.setRotate(180);
+                break;
+            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                matrix.setRotate(180);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_TRANSPOSE:
+                matrix.setRotate(90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.setRotate(90);
+                break;
+            case ExifInterface.ORIENTATION_TRANSVERSE:
+                matrix.setRotate(-90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                matrix.setRotate(-90);
+                break;
+            default:
+                return bitmap;
+        }
+        try {
+            Bitmap bmRotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            bitmap.recycle();
+            return bmRotated;
+        }
+        catch (OutOfMemoryError e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
