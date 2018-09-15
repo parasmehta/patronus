@@ -107,6 +107,13 @@ public class MainActivity extends Activity {
                                     (int) bitmap.getHeight() / 2, true);
 
                         }
+
+                        ImageView imageView = findViewById(R.id.imageView1);
+                        imageView.setImageBitmap(bitmap);
+                        detectAndFrame(bitmap);
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
 

@@ -17,7 +17,9 @@
         android:layout_centerHorizontal="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
-        android:onClick="takePhoto" />
+        android:onClick="takePhoto"
+        android:drawableLeft="@drawable/baseline_camera_black_18dp"
+        android:drawablePadding="2dip"/>
 
 
     <Button
@@ -27,7 +29,8 @@
         android:id="@+id/button1"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
-        />
+        android:drawableLeft="@drawable/baseline_folder_open_black_18dp"
+        android:drawablePadding="2dip" />
 
 
 </RelativeLayout>
