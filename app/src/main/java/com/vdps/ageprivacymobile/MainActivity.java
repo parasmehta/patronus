@@ -22,6 +22,7 @@ public class MainActivity extends Activity {
     // your subscription key. For example,
     // apiEndpoint = "https://westcentralus.api.cognitive.microsoft.com/face/v1.0"
     private final String apiEndpoint = BuildConfig.Endpoint;
+    private final int RESOLUTION_SCALE_LIMIT = 1200;
 
     // Replace `<Subscription Key>` with your subscription key.
     // For example, subscriptionKey = "0123456789abcdef0123456789ABCDEF"
@@ -79,6 +80,11 @@ public class MainActivity extends Activity {
                         getContentResolver(), uri);
                 // Rotate the image based on the exif image tags
                 bitmap = rotateBitmap(bitmap, orientation);
+                // Scale down image if necessary
+                if (bitmap.getWidth() > RESOLUTION_SCALE_LIMIT || bitmap.getHeight() > 1200) {
+                    bitmap = Bitmap.createScaledBitmap(bitmap, (int) bitmap.getWidth() / 2,
+                            (int) bitmap.getHeight() / 2, true);
+                }
                 ImageView imageView = findViewById(R.id.imageView1);
                 imageView.setImageBitmap(bitmap);
                 detectAndFrame(bitmap);
