@@ -25,7 +25,7 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Browse for a face image"
+        android:text="Browse"
         android:id="@+id/button1"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
