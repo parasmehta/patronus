@@ -1,6 +1,8 @@
 package com.vdps.ageprivacymobile;
 
 import java.io.*;
+import java.util.ArrayList;
+
 import android.app.*;
 import android.content.*;
 import android.net.*;
@@ -12,6 +14,8 @@ import android.provider.*;
 
 import com.microsoft.projectoxford.face.*;
 import com.microsoft.projectoxford.face.contract.*;
+
+import static java.lang.Math.min;
 
 public class MainActivity extends Activity {
     // Replace `<API endpoint>` with the Azure region associated with
@@ -61,6 +65,10 @@ public class MainActivity extends Activity {
 
                 // Comment out for tutorial
                 detectAndFrame(bitmap);
+
+                // Get age
+
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -86,12 +94,10 @@ public class MainActivity extends Activity {
                             Face[] result = faceServiceClient.detect(
                                     params[0],
                                     true,         // returnFaceId
-                                    false,        // returnFaceLandmarks
-                                    null          // returnFaceAttributes:
-                                    /* new FaceServiceClient.FaceAttributeType[] {
+                                    true,        // returnFaceLandmarks
+                                     new FaceServiceClient.FaceAttributeType[] {
                                         FaceServiceClient.FaceAttributeType.Age,
                                         FaceServiceClient.FaceAttributeType.Gender }
-                                    */
                             );
                             if (result == null){
                                 publishProgress(
@@ -130,8 +136,18 @@ public class MainActivity extends Activity {
                         if (result == null) return;
 
                         ImageView imageView = findViewById(R.id.imageView1);
+                        ArrayList<Face> underageFaces = new ArrayList<>();
+                        for (Face face : result) {
+                            if (face.faceAttributes.age < 18) {
+                                underageFaces.add(face);
+                            }
+                        }
+//                        Draw rectangles around identified faces
+//                        imageView.setImageBitmap(
+//                                drawFaceRectanglesOnBitmap(imageBitmap, result));
+
                         imageView.setImageBitmap(
-                                drawFaceRectanglesOnBitmap(imageBitmap, result));
+                                blurFacesOnBitmap(imageBitmap, underageFaces.toArray(new Face[underageFaces.size()])));
                         imageBitmap.recycle();
                     }
                 };
@@ -147,6 +163,29 @@ public class MainActivity extends Activity {
                     public void onClick(DialogInterface dialog, int id) {
                     }})
                 .create().show();
+    }
+
+    private static Bitmap blurFacesOnBitmap(
+            Bitmap originalBitmap, Face[] faces) {
+        Bitmap bitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setMaskFilter(new BlurMaskFilter(10, BlurMaskFilter.Blur.NORMAL));
+        paint.setStyle(Paint.Style.FILL);
+        paint.setStrokeWidth(10);
+        paint.setARGB(200, 255, 255, 255);
+        if (faces != null) {
+            for (Face face : faces) {
+                FaceRectangle faceRectangle = face.faceRectangle;
+                canvas.drawCircle(
+                        faceRectangle.left + faceRectangle.width/2 ,
+                        faceRectangle.top + faceRectangle.height/2,
+                        min(faceRectangle.width,faceRectangle.height),
+                        paint);
+            }
+        }
+        return bitmap;
     }
 
     private static Bitmap drawFaceRectanglesOnBitmap(
