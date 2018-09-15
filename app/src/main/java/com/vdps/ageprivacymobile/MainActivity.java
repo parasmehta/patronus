@@ -82,7 +82,7 @@ public class MainActivity extends Activity {
                 // Rotate the image based on the exif image tags
                 bitmap = rotateBitmap(bitmap, orientation);
                 // Scale down image if necessary
-                if (bitmap.getWidth() > RESOLUTION_SCALE_LIMIT || bitmap.getHeight() > 1200) {
+                if (bitmap.getWidth() > RESOLUTION_SCALE_LIMIT || bitmap.getHeight() > RESOLUTION_SCALE_LIMIT) {
                     bitmap = Bitmap.createScaledBitmap(bitmap, (int) bitmap.getWidth() / 2,
                             (int) bitmap.getHeight() / 2, true);
                 }
