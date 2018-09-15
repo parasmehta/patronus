@@ -25,12 +25,11 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Browse"
+        android:text="Browse for a face image"
         android:id="@+id/button1"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
         android:drawableLeft="@drawable/baseline_folder_open_black_18dp"
         android:drawablePadding="2dip" />
-
 
 </RelativeLayout>

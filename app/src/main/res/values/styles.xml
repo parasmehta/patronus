@@ -10,5 +10,9 @@
 <!-- Splash Screen theme. -->
 <style name="SplashTheme" parent="android:Theme.Material.Light.NoActionBar">
     <item name="android:windowBackground">@drawable/splash_background</item>
+    <item name="android:windowFullscreen">true</item>
+    <item name="android:layout_centerInParent">true</item>
+
+
 </style>
 </resources>
