@@ -12,6 +12,7 @@ import android.view.*;
 import android.graphics.*;
 import android.widget.*;
 import android.provider.*;
+
 import com.microsoft.projectoxford.face.*;
 import com.microsoft.projectoxford.face.contract.*;
 
@@ -26,6 +27,7 @@ public class MainActivity extends Activity {
     private final String apiEndpoint = BuildConfig.Endpoint;
     private final int RESOLUTION_SCALE_LIMIT = 1200;
     private final int ADULT_AGE = 18;
+    private String imageFilter = "downsample";  // choose from ("emoticon", "downsample")
 
     // Replace `<Subscription Key>` with your subscription key.
     // For example, subscriptionKey = "0123456789abcdef0123456789ABCDEF"
@@ -64,17 +66,15 @@ public class MainActivity extends Activity {
             InputStream in = null;
             try {
                 in = getContentResolver().openInputStream(uri);
-            }
-            catch (FileNotFoundException e) {
+            } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
             try {
                 ExifInterface exif = null;
                 try {
                     if (in != null)
-                    exif = new ExifInterface(in);
-                }
-                catch(IOException e) {
+                        exif = new ExifInterface(in);
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
                 int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
@@ -118,13 +118,13 @@ public class MainActivity extends Activity {
                                     params[0],
                                     true,         // returnFaceId
                                     true,        // returnFaceLandmarks
-                                     new FaceServiceClient.FaceAttributeType[] {
-                                        FaceServiceClient.FaceAttributeType.Age,
-                                        FaceServiceClient.FaceAttributeType.Gender,
-                                        FaceServiceClient.FaceAttributeType.Emotion
-                                     }
+                                    new FaceServiceClient.FaceAttributeType[]{
+                                            FaceServiceClient.FaceAttributeType.Age,
+                                            FaceServiceClient.FaceAttributeType.Gender,
+                                            FaceServiceClient.FaceAttributeType.Emotion
+                                    }
                             );
-                            if (result == null){
+                            if (result == null) {
                                 publishProgress(
                                         "Detection Finished. Nothing detected");
                                 return null;
@@ -145,17 +145,19 @@ public class MainActivity extends Activity {
                         //TODO: show progress dialog
                         detectionProgressDialog.show();
                     }
+
                     @Override
                     protected void onProgressUpdate(String... progress) {
                         //TODO: update progress
                         detectionProgressDialog.setMessage(progress[0]);
                     }
+
                     @Override
                     protected void onPostExecute(Face[] result) {
                         //TODO: update face frames
                         detectionProgressDialog.dismiss();
 
-                        if(!exceptionMessage.equals("")){
+                        if (!exceptionMessage.equals("")) {
                             showError(exceptionMessage);
                         }
                         if (result == null) return;
@@ -173,17 +175,19 @@ public class MainActivity extends Activity {
 //                        Bitmap bitmapWithRectangles = drawFaceRectanglesOnBitmap(imageBitmap, result);
 //                        imageView.setImageBitmap(
 //                                drawFaceRectanglesOnBitmap(imageBitmap, result));
-
-                        imageView.setImageBitmap(
-                                blurFacesAndAddMoodOnBitmap(imageBitmap, underageFaces.toArray(new Face[underageFaces.size()])));
+                        if (imageFilter.equals("emoticon")) {
+                            imageView.setImageBitmap(
+                                    blurFacesAndAddMoodOnBitmap(imageBitmap, underageFaces.toArray(new Face[underageFaces.size()])));
 //                        For also drawing the bounded rectangles
 //                        imageView.setImageBitmap(
 //                                blurFacesAndAddMoodOnBitmap(bitmapWithRectangles, underageFaces.toArray(new Face[underageFaces.size()])));
+                        }
+                        else if (imageFilter.equals("downsample")) {
+                            // Blur with downsampling and upsampling
+                            imageView.setImageBitmap(
+                                    blurFacesDownUpSample(imageBitmap, underageFaces.toArray(new Face[underageFaces.size()])));
+                        }
                         imageBitmap.recycle();
-//                        imageView.setImageBitmap(
-//                                fastblur(imageBitmap, 1, 10));
-//                        imageBitmap.recycle();
-
                     }
                 };
 
@@ -196,20 +200,21 @@ public class MainActivity extends Activity {
                 .setMessage(message)
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                    }})
+                    }
+                })
                 .create().show();
     }
 
     /**
      * Add emoticon based on emotion detection and bounded blur.
+     *
      * @param originalBitmap The original bitmap to draw on
-     * @param faces The detected face objects
+     * @param faces          The detected face objects
      * @return The new bitmap
      */
     private static Bitmap blurFacesAndAddMoodOnBitmap(
             Bitmap originalBitmap, Face[] faces) {
         Bitmap bitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
-//        Log.d("ADebugTag", "bitmap width: " + Integer.toString(bitmap.getWidth()));
         Canvas canvas = new Canvas(bitmap);
         Paint paint = new Paint();
         paint.setAntiAlias(true);
@@ -225,36 +230,52 @@ public class MainActivity extends Activity {
             for (Face face : faces) {
 
                 FaceRectangle faceRectangle = face.faceRectangle;
-		// Emotion-based processing
+                // Emotion-based processing
                 String emoticon = getEmoticonFromMood(paint, face);
                 canvas.drawCircle(
-                        faceRectangle.left + faceRectangle.width/2f ,
-                        faceRectangle.top + faceRectangle.height/2f,
-                        min(min(faceRectangle.width,faceRectangle.height),200),
+                        faceRectangle.left + faceRectangle.width / 2f,
+                        faceRectangle.top + faceRectangle.height / 2f,
+                        min(min(faceRectangle.width, faceRectangle.height), 200),
                         paint);
                 textPaint.setTextSize(Math.min(faceRectangle.width, 199));
-                canvas.drawText(emoticon, faceRectangle.left + faceRectangle.width/8f,
-                        faceRectangle.top + faceRectangle.height*2/3f, textPaint);
+                canvas.drawText(emoticon, faceRectangle.left + faceRectangle.width / 8f,
+                        faceRectangle.top + faceRectangle.height * 2 / 3f, textPaint);
+            }
+        }
+        return bitmap;
+    }
 
-		
-		// Create new bitmap translated to (0,0) for each face
-		int ri = 0;
+    /**
+     * Blur face for privacy reasons, based on subsequent downsampling and upsampling.
+     * @param originalBitmap The original bitmap to draw on
+     * @param faces The detected face objects
+     * @return Te new bitmap
+     */
+    private static Bitmap blurFacesDownUpSample(
+            Bitmap originalBitmap, Face[] faces) {
+        Bitmap bitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
+//        Log.d("ADebugTag", "bitmap width: " + Integer.toString(bitmap.getWidth()));
+
+        if (faces != null) {
+            for (Face face : faces) {
+
+                FaceRectangle faceRectangle = face.faceRectangle;
+                // Create new bitmap translated to (0,0) for each face
+                int ri = 0;
                 Bitmap resultBitmap = Bitmap.createBitmap(faceRectangle.width, faceRectangle.height, Bitmap.Config.ARGB_8888);
-                for (int i= faceRectangle.left; i<faceRectangle.width + faceRectangle.left; i++){
+                for (int i = faceRectangle.left; i < faceRectangle.width + faceRectangle.left; i++) {
                     int rj = 0;
-                    for (int j= faceRectangle.top; j<faceRectangle.height + faceRectangle.top; j++){
+                    for (int j = faceRectangle.top; j < faceRectangle.height + faceRectangle.top; j++) {
                         resultBitmap.setPixel(ri, rj, bitmap.getPixel(i, j));
                         rj++;
                     }
                     ri++;
                 }
 //                Log.d("ADebugTag", "resultBitmap width: " + Integer.toString(resultBitmap.getWidth()));
-
-
-		// Downsample
+                // Downsample
                 Bitmap downBitmap = Bitmap.createScaledBitmap(resultBitmap, (int) (resultBitmap.getWidth() * 0.03),
                         (int) (resultBitmap.getHeight() * 0.03), true);
-		// Upsample
+                // Upsample
                 Bitmap upBitmap = Bitmap.createScaledBitmap(downBitmap,
                         (int) resultBitmap.getWidth(),
                         (int) resultBitmap.getHeight(), true);
@@ -262,9 +283,10 @@ public class MainActivity extends Activity {
 //                Log.d("ADebugTag", "upBitmap width: " + Integer.toString(upBitmap.getWidth()));
 //
                 // Translate back to the original bitmap.
-		for (int i= faceRectangle.left; i<faceRectangle.width + faceRectangle.left; i++){
+                int ui = 0;
+                for (int i = faceRectangle.left; i < faceRectangle.width + faceRectangle.left; i++) {
                     int uj = 0;
-                    for (int j= faceRectangle.top; j<faceRectangle.height + faceRectangle.top; j++){
+                    for (int j = faceRectangle.top; j < faceRectangle.height + faceRectangle.top; j++) {
                         bitmap.setPixel(i, j, upBitmap.getPixel(ui, uj));
                         uj++;
                     }
@@ -272,16 +294,15 @@ public class MainActivity extends Activity {
                 }
 //                Log.d("ADebugTag", "Bitmap width: " + Integer.toString(bitmap.getWidth()));
             }
-
-
         }
         return bitmap;
     }
 
     /**
      * Get the proper emoticon based on prevalent mood.
+     *
      * @param paint The paint object to match color of emoji
-     * @param face The face for which we search the emoji
+     * @param face  The face for which we search the emoji
      * @return The emoji for the face at hand.
      */
     private static String getEmoticonFromMood(Paint paint, Face face) {
@@ -291,43 +312,35 @@ public class MainActivity extends Activity {
             max_value = face.faceAttributes.emotion.anger;
             emoticon = "😡";
             paint.setARGB(245, 225, 106, 47);
-        }
-        else if (face.faceAttributes.emotion.contempt > max_value) {
+        } else if (face.faceAttributes.emotion.contempt > max_value) {
             max_value = face.faceAttributes.emotion.contempt;
             emoticon = "😒";
             paint.setARGB(245, 252, 241, 108);
-        }
-        else if (face.faceAttributes.emotion.disgust > max_value) {
+        } else if (face.faceAttributes.emotion.disgust > max_value) {
             max_value = face.faceAttributes.emotion.disgust;
             emoticon = "🤢";
             paint.setARGB(245, 139, 163, 50);
-        }
-        else if (face.faceAttributes.emotion.fear > max_value) {
+        } else if (face.faceAttributes.emotion.fear > max_value) {
             max_value = face.faceAttributes.emotion.fear;
             emoticon = "😰";
             paint.setARGB(245, 252, 241, 108);
-        }
-        else if (face.faceAttributes.emotion.happiness > max_value) {
+        } else if (face.faceAttributes.emotion.happiness > max_value) {
             max_value = face.faceAttributes.emotion.happiness;
             emoticon = "😁";
             paint.setARGB(245, 252, 241, 108);
-        }
-        else if (face.faceAttributes.emotion.sadness > max_value) {
+        } else if (face.faceAttributes.emotion.sadness > max_value) {
             max_value = face.faceAttributes.emotion.sadness;
             emoticon = "😢";
             paint.setARGB(245, 252, 241, 108);
-        }
-        else if (face.faceAttributes.emotion.surprise > max_value) {
+        } else if (face.faceAttributes.emotion.surprise > max_value) {
             max_value = face.faceAttributes.emotion.surprise;
             emoticon = "😮";
             paint.setARGB(245, 252, 241, 108);
-        }
-        else if (face.faceAttributes.emotion.neutral > max_value) {
+        } else if (face.faceAttributes.emotion.neutral > max_value) {
             max_value = face.faceAttributes.emotion.neutral;
             emoticon = "🙂";
             paint.setARGB(245, 252, 241, 108);
-        }
-        else {
+        } else {
             emoticon = "";
             paint.setARGB(250, 255, 255, 255);
         }
@@ -336,8 +349,9 @@ public class MainActivity extends Activity {
 
     /**
      * Draw bounding rectangles of the recognised faces.
+     *
      * @param originalBitmap The original bitmap
-     * @param faces The recognised faces
+     * @param faces          The recognised faces
      * @return The bitmap with the rectangles drawn
      */
     private static Bitmap drawFaceRectanglesOnBitmap(
@@ -365,7 +379,8 @@ public class MainActivity extends Activity {
 
     /**
      * Rotates the bitmap based on the exif extracted orientation.
-     * @param bitmap The bitmap to rotate
+     *
+     * @param bitmap      The bitmap to rotate
      * @param orientation The orientation extracted from EXIF tags
      * @return The rotated bitmap
      */
@@ -406,8 +421,7 @@ public class MainActivity extends Activity {
             Bitmap bmRotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
             bitmap.recycle();
             return bmRotated;
-        }
-        catch (OutOfMemoryError e) {
+        } catch (OutOfMemoryError e) {
             e.printStackTrace();
             return null;
         }
