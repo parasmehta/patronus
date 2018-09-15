@@ -17,6 +17,8 @@ import com.microsoft.projectoxford.face.contract.*;
 
 import static java.lang.Math.min;
 
+import android.util.Log;
+
 public class MainActivity extends Activity {
     // Replace `<API endpoint>` with the Azure region associated with
     // your subscription key. For example,
@@ -178,6 +180,10 @@ public class MainActivity extends Activity {
 //                        imageView.setImageBitmap(
 //                                blurFacesAndAddMoodOnBitmap(bitmapWithRectangles, underageFaces.toArray(new Face[underageFaces.size()])));
                         imageBitmap.recycle();
+//                        imageView.setImageBitmap(
+//                                fastblur(imageBitmap, 1, 10));
+//                        imageBitmap.recycle();
+
                     }
                 };
 
@@ -203,6 +209,7 @@ public class MainActivity extends Activity {
     private static Bitmap blurFacesAndAddMoodOnBitmap(
             Bitmap originalBitmap, Face[] faces) {
         Bitmap bitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
+//        Log.d("ADebugTag", "bitmap width: " + Integer.toString(bitmap.getWidth()));
         Canvas canvas = new Canvas(bitmap);
         Paint paint = new Paint();
         paint.setAntiAlias(true);
@@ -216,7 +223,9 @@ public class MainActivity extends Activity {
 
         if (faces != null) {
             for (Face face : faces) {
+
                 FaceRectangle faceRectangle = face.faceRectangle;
+		// Emotion-based processing
                 String emoticon = getEmoticonFromMood(paint, face);
                 canvas.drawCircle(
                         faceRectangle.left + faceRectangle.width/2f ,
@@ -226,7 +235,45 @@ public class MainActivity extends Activity {
                 textPaint.setTextSize(Math.min(faceRectangle.width, 199));
                 canvas.drawText(emoticon, faceRectangle.left + faceRectangle.width/8f,
                         faceRectangle.top + faceRectangle.height*2/3f, textPaint);
+
+		
+		// Create new bitmap translated to (0,0) for each face
+		int ri = 0;
+                Bitmap resultBitmap = Bitmap.createBitmap(faceRectangle.width, faceRectangle.height, Bitmap.Config.ARGB_8888);
+                for (int i= faceRectangle.left; i<faceRectangle.width + faceRectangle.left; i++){
+                    int rj = 0;
+                    for (int j= faceRectangle.top; j<faceRectangle.height + faceRectangle.top; j++){
+                        resultBitmap.setPixel(ri, rj, bitmap.getPixel(i, j));
+                        rj++;
+                    }
+                    ri++;
+                }
+//                Log.d("ADebugTag", "resultBitmap width: " + Integer.toString(resultBitmap.getWidth()));
+
+
+		// Downsample
+                Bitmap downBitmap = Bitmap.createScaledBitmap(resultBitmap, (int) (resultBitmap.getWidth() * 0.03),
+                        (int) (resultBitmap.getHeight() * 0.03), true);
+		// Upsample
+                Bitmap upBitmap = Bitmap.createScaledBitmap(downBitmap,
+                        (int) resultBitmap.getWidth(),
+                        (int) resultBitmap.getHeight(), true);
+//                Log.d("ADebugTag", "downBitmap width: " + Integer.toString(downBitmap.getWidth()));
+//                Log.d("ADebugTag", "upBitmap width: " + Integer.toString(upBitmap.getWidth()));
+//
+                // Translate back to the original bitmap.
+		for (int i= faceRectangle.left; i<faceRectangle.width + faceRectangle.left; i++){
+                    int uj = 0;
+                    for (int j= faceRectangle.top; j<faceRectangle.height + faceRectangle.top; j++){
+                        bitmap.setPixel(i, j, upBitmap.getPixel(ui, uj));
+                        uj++;
+                    }
+                    ui++;
+                }
+//                Log.d("ADebugTag", "Bitmap width: " + Integer.toString(bitmap.getWidth()));
             }
+
+
         }
         return bitmap;
     }
