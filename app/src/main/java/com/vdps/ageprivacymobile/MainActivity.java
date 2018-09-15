@@ -282,6 +282,7 @@ public class MainActivity extends Activity {
         }
         else {
             emoticon = "";
+            paint.setARGB(250, 255, 255, 255);
         }
         return emoticon;
     }
