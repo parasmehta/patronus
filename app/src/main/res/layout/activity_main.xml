@@ -10,9 +10,24 @@
         android:contentDescription="Image with faces to analyze"/>
 
     <Button
-        android:layout_width="match_parent"
+        android:id="@+id/button_take_a_photo"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Browse for a face image"
+        android:text="Take photo"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:onClick="takePhoto" />
+
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Browse"
         android:id="@+id/button1"
-        android:layout_alignParentBottom="true"/>
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        />
+
+
 </RelativeLayout>
