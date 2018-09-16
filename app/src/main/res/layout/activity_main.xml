@@ -21,6 +21,45 @@
         android:drawableLeft="@drawable/baseline_camera_black_18dp"
         android:drawablePadding="2dip"/>
 
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="72dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="false"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        >
+
+        <TextView
+            android:id="@+id/switchTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="false"
+            android:layout_centerInParent="true"
+            android:layout_margin="5dp"
+            android:padding="10dp"
+            android:text="blur"
+            android:textSize="18sp" />
+
+        <Switch
+            android:id="@+id/functionSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="false"
+            android:layout_alignParentLeft="false"
+            android:layout_alignParentRight="false"
+            android:layout_alignParentStart="false"
+            android:layout_alignParentTop="false"
+            android:layout_centerHorizontal="true"
+            android:layout_centerInParent="true"
+            android:layout_centerVertical="true"
+            android:checked="false"
+            android:switchMinWidth="24dp"
+            android:text="@null" />
+    </RelativeLayout>
+
+
 
     <Button
         android:layout_width="wrap_content"

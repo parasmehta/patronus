@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
     private final String apiEndpoint = BuildConfig.Endpoint;
     private final int RESOLUTION_SCALE_LIMIT = 1200;
     private final int ADULT_AGE = 18;
-    private String imageFilter = "downsample";  // choose from ("emoticon", "downsample")
+    private String imageFilter = "emoticon";  // choose from ("emoticon", "blur")
 
     // Replace `<Subscription Key>` with your subscription key.
     // For example, subscriptionKey = "0123456789abcdef0123456789ABCDEF"
@@ -63,6 +63,15 @@ public class MainActivity extends Activity {
         button2.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 takePhoto(v);
+            }
+        });
+
+        Switch toggle = findViewById(R.id.functionSwitch);
+        toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                toggleFunctionality(isChecked);
+                TextView tv = findViewById(R.id.switchTitle);
+                tv.setText(imageFilter);
             }
         });
 
@@ -140,6 +149,15 @@ public class MainActivity extends Activity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public void toggleFunctionality(boolean isChecked) {
+        if (isChecked) {
+            this.imageFilter = "emoticon";
+        }
+        else {
+            this.imageFilter = "blur";
         }
     }
 
@@ -227,7 +245,7 @@ public class MainActivity extends Activity {
 //                        imageView.setImageBitmap(
 //                                blurFacesAndAddMoodOnBitmap(bitmapWithRectangles, underageFaces.toArray(new Face[underageFaces.size()])));
                         }
-                        else if (imageFilter.equals("downsample")) {
+                        else if (imageFilter.equals("blur")) {
                             // Blur with downsampling and upsampling
                             imageView.setImageBitmap(
                                     blurFacesDownUpSample(imageBitmap, underageFaces.toArray(new Face[underageFaces.size()])));
