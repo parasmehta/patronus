@@ -13,13 +13,14 @@
         android:id="@+id/button_take_a_photo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Take photo"
-        android:layout_centerHorizontal="true"
-        android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:background="?android:attr/selectableItemBackground"
+        android:drawableLeft="@android:drawable/ic_menu_camera"
+        android:drawablePadding="2dp"
         android:onClick="takePhoto"
-        android:drawableLeft="@drawable/baseline_camera_black_18dp"
-        android:drawablePadding="2dip"/>
+        android:paddingLeft="10dp"
+        android:text="" />
 
     <RelativeLayout
         android:layout_width="wrap_content"
@@ -39,6 +40,7 @@
             android:layout_margin="5dp"
             android:padding="10dp"
             android:text="blur"
+            android:textAlignment="center"
             android:textSize="18sp" />
 
         <Switch
@@ -60,15 +62,16 @@
     </RelativeLayout>
 
 
-
     <Button
+        android:id="@+id/button1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Browse"
-        android:id="@+id/button1"
-        android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
-        android:drawableLeft="@drawable/baseline_folder_open_black_18dp"
-        android:drawablePadding="2dip" />
+        android:layout_alignParentRight="true"
+        android:background="?android:attr/selectableItemBackground"
+        android:drawablePadding="2dp"
+        android:drawableRight="@android:drawable/ic_menu_gallery"
+        android:paddingRight="10dp"
+        android:text="" />
 
 </RelativeLayout>

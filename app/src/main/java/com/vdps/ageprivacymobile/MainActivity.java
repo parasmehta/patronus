@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
     private final String apiEndpoint = BuildConfig.Endpoint;
     private final int RESOLUTION_SCALE_LIMIT = 1200;
     private final int ADULT_AGE = 18;
-    private String imageFilter = "emoticon";  // choose from ("emoticon", "blur")
+    private String imageFilter = "blur";  // choose from ("emoticon", "blur")
 
     // Replace `<Subscription Key>` with your subscription key.
     // For example, subscriptionKey = "0123456789abcdef0123456789ABCDEF"
